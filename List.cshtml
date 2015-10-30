@@ -1,0 +1,107 @@
+﻿@using FPSVideoCallApplication.Common;
+@using FPSVideoCallApplication.Models;
+@using FPSVideoCallApplication.Models.Terminal;
+@using MvcContrib.UI.Grid;
+@using MvcContrib.UI.Pager;
+@model PagedViewModel<TerminalListModel>
+@{
+    ViewBag.Title = "Список видеотерминалов";
+}
+@section HeadLinks {
+    <link href="@Url.Content("~/Content/entity-list.css")" rel="stylesheet" type="text/css" />
+    <link href="@Url.Content("~/Content/common.css")" rel="stylesheet" type="text/css" />
+    <script src="@Url.Content("~/Scripts/jquery-ui.combobox.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/Models/initregioncombobox.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/Models/terminal.js")" type="text/javascript"></script>
+    <script type="text/javascript">        ListAction();</script>
+}
+<h2>@ViewBag.Title</h2>
+<div class="grid-search">
+    @using (Html.BeginForm("List", "Terminal", FormMethod.Get, new
+    {
+        id = "terminalSearch"
+    }))
+    {
+        <div>
+            <label>
+                Номер</label>@Html.TextBox("number")
+            <label>
+                Регион</label>@Html.DropDownList("RegionId", "-- Все регионы --")
+                <label>
+                Адрес установки терминала</label>@Html.TextBox("terminalAddress")
+                 <label>
+                Учреждение ГУФСИН</label>@Html.DropDownList("CorrectionFacilityId", "-- Все учреждения --")
+                 
+        </div>
+    
+        <input value="Найти" type="submit" class="ui-blocker" />
+    }
+</div>
+        @{ if (UserHelper.Instance.IsAdministrator || UserHelper.Instance.IsManager)
+           {
+<div class="application-grid-descriptions">
+    <div class="description-row">
+        <span class="active-terminal-rectangle">&nbsp;</span> Терминал доступен.
+    </div>
+    <div class="description-row">
+        <span class="non-active-terminal-rectangle">&nbsp;</span> Терминал помечен как недоступный.
+    </div>
+</div>
+           }
+       }
+<div class="grid-container">
+    <div class="navigation-panel">
+        @{ if (UserHelper.Instance.IsAdministrator || UserHelper.Instance.IsManager)
+           {
+            <div class="right-floated">
+                @Html.ActionLink("Добавить видеотерминал", "Create", "Terminal", new { },
+                             new { @class = "button plus-button ui-blocker" })
+            </div>
+           }
+        }
+        @Html.Pager(Model.PagedList).Format("Записи {0} - {1} из {2}").SingleFormat("Запись {0} из {1}").First(" <<<< ").Previous(" пред. ").Next(" след. ").Last(" >>>> ")
+    </div>
+    @{Html
+      .Grid(Model.PagedList)
+      .Attributes(cellpadding => 0, cellspacing => 0, border => 0)
+      .RowAttributes(row => new Dictionary<string, object> { { "class", row.Item.IsActive ? "active-terminal-row" : "non-active-terminal-row" } })
+      .Columns(column =>
+                   {
+                       column.For(model => Html.ActionLink(" ", "Details", new { id = model.Id }, new { @class = "details-link", title = "Посмотреть детали видеотерминала" }))
+                           .Named(string.Empty)
+                           .Attributes(x => new Dictionary<string, object> { { "class", "link" } });
+
+                       column.For(model => Html.ActionLink(" ", "Edit", new { id = model.Id }, new { @class = "edit-link ui-blocker", title = "Редактировать видеотерминал" }))
+                           .Named(string.Empty)
+                           .Attributes(x => new Dictionary<string, object> { { "class", "link" } })
+                           .Visible(UserHelper.Instance.IsManager || UserHelper.Instance.IsAdministrator);
+
+                       column.For(model => Html.ActionLink(" ", "Delete", new { id = model.Id }, new { @class = "delete-link confirm-deletion", title = "Удалить видеотерминал" }))
+                           .Named(string.Empty)
+                           .Attributes(x => new Dictionary<string, object> { { "class", "link" } })
+                           .Visible(UserHelper.Instance.IsManager || UserHelper.Instance.IsAdministrator);
+
+                       column.For(model => model.PhoneNumber)
+                           .Attributes(x => new Dictionary<string, object> { { "class", "data" } });
+
+                       column.For(model => model.IsPublic ? "для общего доступа" : "для осужденных")
+                           .Attributes(x => new Dictionary<string, object> { { "class", "data readonly" } })
+                           .SortColumnName("IsPublic")
+                           .Named("Назначение видеотерминала");
+
+
+                       column.For(model => Html.ActionLink(model.CorrectionFacilityName, "Details", "CorrectionFacility", new { id = model.CorrectionFacilityId }, new { title = "Посмотреть детали учреждения" }))
+                           .Attributes(x => new Dictionary<string, object> { { "class", "data" } })
+                           .SortColumnName("CorrectionFacilityName")
+                           .Named("Подразделение");
+
+                       column.For(model => model.InstallationAddress)
+                           .Attributes(x => new Dictionary<string, object> { { "class", "data" } })
+                           .SortColumnName("InstallationAddress");
+                   })
+      .Sort(Model.GridSortOptions)
+      .Empty("<div class='empty-text'>Список пуст</div>")
+      .Render();
+    }
+    @Html.Pager(Model.PagedList).Format("Записи {0} - {1} из {2}").SingleFormat("Запись {0} из {1}").First(" <<<< ").Previous(" пред. ").Next(" след. ").Last(" >>>> ")
+</div>
